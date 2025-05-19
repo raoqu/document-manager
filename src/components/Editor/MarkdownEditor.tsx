@@ -3,6 +3,10 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
+import Table from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
 import './MarkdownEditor.css';
 import * as api from '../../services/api';
 import type { MarkdownDocument } from '../../types';
@@ -21,6 +25,12 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onCha
       StarterKit,
       Image,
       Link,
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
     ],
     content: markdownDocument?.content || '',
     onUpdate: ({ editor }) => {
@@ -168,6 +178,69 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onCha
     };
   }, [editor, markdownDocument, editable]);
   
+  // Handle table insertion
+  const handleInsertTable = () => {
+    if (!editor) return;
+    
+    // Default table size: 3x3
+    editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+  };
+  
+  // Handle table row operations
+  const handleAddRowBefore = () => {
+    if (!editor) return;
+    editor.chain().focus().addRowBefore().run();
+  };
+  
+  const handleAddRowAfter = () => {
+    if (!editor) return;
+    editor.chain().focus().addRowAfter().run();
+  };
+  
+  const handleDeleteRow = () => {
+    if (!editor) return;
+    editor.chain().focus().deleteRow().run();
+  };
+  
+  // Handle table column operations
+  const handleAddColumnBefore = () => {
+    if (!editor) return;
+    editor.chain().focus().addColumnBefore().run();
+  };
+  
+  const handleAddColumnAfter = () => {
+    if (!editor) return;
+    editor.chain().focus().addColumnAfter().run();
+  };
+  
+  const handleDeleteColumn = () => {
+    if (!editor) return;
+    editor.chain().focus().deleteColumn().run();
+  };
+  
+  // Handle deleting the entire table
+  const handleDeleteTable = () => {
+    if (!editor) return;
+    editor.chain().focus().deleteTable().run();
+  };
+  
+  // Handle merging and splitting cells
+  const handleMergeCells = () => {
+    if (!editor) return;
+    editor.chain().focus().mergeCells().run();
+  };
+  
+  const handleSplitCell = () => {
+    if (!editor) return;
+    editor.chain().focus().splitCell().run();
+  };
+  
+  // Handle toggling header cells
+  const handleToggleHeaderCell = () => {
+    if (!editor) return;
+    editor.chain().focus().toggleHeaderCell().run();
+  };
+  
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -190,6 +263,12 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onCha
         e.preventDefault();
         handleLinkInsert();
       }
+      
+      // t for table
+      if (e.key === 't' && e.ctrlKey) {
+        e.preventDefault();
+        handleInsertTable();
+      }
     };
 
     window.document.addEventListener('keydown', handleKeyDown);
@@ -207,6 +286,37 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onCha
       <div className="editor-toolbar">
         <button onClick={handleImageUpload}>Insert Image</button>
         <button onClick={handleLinkInsert}>Link</button>
+        
+        {/* Table controls */}
+        <div className="table-controls">
+          <button onClick={handleInsertTable}>Insert Table</button>
+          
+          {/* Only show these controls when a table is selected */}
+          {editor?.isActive('table') && (
+            <>
+              <div className="table-row-controls">
+                <button onClick={handleAddRowBefore}>Add Row Before</button>
+                <button onClick={handleAddRowAfter}>Add Row After</button>
+                <button onClick={handleDeleteRow}>Delete Row</button>
+              </div>
+              
+              <div className="table-column-controls">
+                <button onClick={handleAddColumnBefore}>Add Column Before</button>
+                <button onClick={handleAddColumnAfter}>Add Column After</button>
+                <button onClick={handleDeleteColumn}>Delete Column</button>
+              </div>
+              
+              <div className="table-cell-controls">
+                <button onClick={handleToggleHeaderCell}>Toggle Header</button>
+                <button onClick={handleMergeCells}>Merge Cells</button>
+                <button onClick={handleSplitCell}>Split Cell</button>
+              </div>
+              
+              <button onClick={handleDeleteTable}>Delete Table</button>
+            </>
+          )}
+        </div>
+        
         {editable && (
           <span className="shortcut-hint">
             Press <kbd>Ctrl</kbd>+<kbd>S</kbd> or <kbd>⌘</kbd>+<kbd>S</kbd> to save
