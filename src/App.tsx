@@ -352,6 +352,7 @@ function App() {
                       setHasUnsavedChanges(false);
                     }
                   }}
+                  onSave={isEditingDocument ? handleSaveDocument : undefined}
                   editable={isEditingDocument}
                 />
               </div>

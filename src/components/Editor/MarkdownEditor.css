@@ -17,13 +17,23 @@
 }
 
 .editor-toolbar button {
-  margin-right: 8px;
-  padding: 4px 8px;
-  background-color: #fff;
-  border: 1px solid #d1d5da;
+  padding: 5px 10px;
+  margin-right: 5px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
   border-radius: 3px;
-  font-size: 12px;
   cursor: pointer;
+}
+
+.editor-toolbar .save-button {
+  background-color: #4CAF50;
+  color: white;
+  font-weight: bold;
+  border: 1px solid #45a049;
+}
+
+.editor-toolbar .save-button:hover {
+  background-color: #45a049;
 }
 
 .editor-toolbar button:hover {

@@ -14,10 +14,11 @@ import type { MarkdownDocument } from '../../types';
 interface MarkdownEditorProps {
   markdownDocument: MarkdownDocument | null;
   onChange: (content: string) => void;
+  onSave?: () => void; // Function to save the document
   editable?: boolean; // Whether the editor should be in edit mode
 }
 
-const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onChange, editable = true }) => {
+const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onChange, onSave, editable = true }) => {
   // Create the editor with initial configuration
   const editor = useEditor({
     // We'll control editable state via useEffect
@@ -304,6 +305,15 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onCha
   return (
     <div className="editor-container">
       <div className="editor-toolbar">
+        {editable && onSave && (
+          <button 
+            className="save-button" 
+            onClick={onSave}
+            title="Save document (Ctrl+S)"
+          >
+            Save
+          </button>
+        )}
         <button onClick={handleImageUpload}>Insert Image</button>
         <button onClick={handleLinkInsert}>Link</button>
         
