@@ -117,8 +117,18 @@ function App() {
       // Check if Ctrl key (Windows) or Command key (Mac) is pressed along with 'S'
       if ((event.ctrlKey || event.metaKey) && event.key === 's') {
         event.preventDefault(); // Prevent browser's default save action
-        if (currentDocument && isEditingDocument) {
+        
+        // Only save if we have a current document, it's in edit mode, and we have a library selected
+        if (currentDocument && isEditingDocument && currentLibraryId) {
+          console.log('Saving document via keyboard shortcut');
           handleSaveDocument();
+        } else {
+          console.log('Cannot save: No document selected or not in edit mode');
+          // Optionally show a message to the user
+          if (!currentDocument) {
+            // No need to show an alert for this case as it's not an error
+            console.log('No document selected');
+          }
         }
       }
     };
