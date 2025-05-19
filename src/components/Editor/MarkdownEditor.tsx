@@ -3,15 +3,19 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
+import './MarkdownEditor.css';
 import type { MarkdownDocument } from '../../types';
 
 interface MarkdownEditorProps {
   markdownDocument: MarkdownDocument | null;
   onChange: (content: string) => void;
+  editable?: boolean; // Whether the editor should be in edit mode
 }
 
-const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onChange }) => {
+const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onChange, editable = true }) => {
+  // Create the editor with initial configuration
   const editor = useEditor({
+    // We'll control editable state via useEffect
     extensions: [
       StarterKit,
       Image,
@@ -23,11 +27,29 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onCha
     },
   });
 
+  // Update content when markdownDocument changes
   useEffect(() => {
     if (editor && markdownDocument) {
-      editor.commands.setContent(markdownDocument.content);
+      // Only update content if it's different to avoid cursor jumps
+      if (editor.getHTML() !== markdownDocument.content) {
+        editor.commands.setContent(markdownDocument.content);
+      }
     }
   }, [markdownDocument, editor]);
+  
+  // Set editable state whenever it changes or editor is initialized
+  useEffect(() => {
+    if (editor) {
+      console.log('Setting editor editable state to:', editable);
+      editor.setEditable(editable);
+    }
+  }, [editor, editable]);
+  
+  // Force update editable state on render
+  if (editor && editor.isEditable !== editable) {
+    console.log('Forcing editor editable update to:', editable);
+    editor.setEditable(editable);
+  }
 
   const handleImageUpload = () => {
     const url = window.prompt('Enter image URL');
@@ -110,8 +132,13 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onCha
         <button onClick={handleAddLink}>
           Link
         </button>
+        {/* {editable && (
+          <span className="shortcut-hint">
+            Press <kbd>Ctrl</kbd>+<kbd>S</kbd> or <kbd>⌘</kbd>+<kbd>S</kbd> to save
+          </span>
+        )} */}
       </div>
-      <EditorContent editor={editor} />
+      <EditorContent editor={editor} className="editor-content" />
     </div>
   );
 };

@@ -44,27 +44,56 @@ export const useDocumentTree = (libraryName: string | null) => {
 
   // Update current document when selected document changes
   useEffect(() => {
-    if (!selectedDocumentId) {
+    if (!selectedDocumentId || !libraryName) {
       setCurrentDocument(null);
       return;
     }
 
-    const findDocument = (docs: Document[], id: number): Document | null => {
-      for (const doc of docs) {
-        if (doc.id === id) {
-          return doc;
-        }
-        if (doc.children && doc.children.length > 0) {
-          const found = findDocument(doc.children, id);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
+    const fetchDocumentInfo = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        // First find the document in the tree to get basic info
+        const findDocument = (docs: Document[], id: number): Document | null => {
+          for (const doc of docs) {
+            if (doc.id === id) {
+              return doc;
+            }
+            if (doc.children && doc.children.length > 0) {
+              const found = findDocument(doc.children, id);
+              if (found) return found;
+            }
+          }
+          return null;
+        };
 
-    const doc = findDocument(documents, selectedDocumentId);
-    setCurrentDocument(doc);
-  }, [selectedDocumentId, documents]);
+        // Get basic document info from the tree
+        const basicDoc = findDocument(documents, selectedDocumentId);
+        
+        if (basicDoc) {
+          // Fetch full document info from the API
+          const fullDoc = await api.getDocument(libraryName, selectedDocumentId);
+          
+          // Merge the document info with the tree structure info
+          setCurrentDocument({
+            ...basicDoc,
+            content: fullDoc.content, // Use the content from the API
+            title: fullDoc.title, // Use the title from the API
+          });
+        } else {
+          setCurrentDocument(null);
+        }
+      } catch (err) {
+        console.error('Failed to fetch document info:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch document info');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchDocumentInfo();
+  }, [selectedDocumentId, documents, libraryName]);
 
   // Create a new document
   const createDocument = useCallback(async (
@@ -117,7 +146,50 @@ export const useDocumentTree = (libraryName: string | null) => {
       setSelectedDocumentId(newDocId);
     }
   }, [libraryName, createDocument]);
+  
+  // Rename a document
+  const renameDocument = useCallback(async (id: number, newTitle: string) => {
+    if (!libraryName) return;
+    
+    try {
+      // Call the API to update the document title
+      await api.updateDocument(libraryName, id, newTitle);
+      
+      // Refresh the document tree to get the updated data
+      const documentTree = await api.getDocumentTree(libraryName);
+      setDocuments(documentTree);
+      
+      // Update current document if it's the one being renamed
+      if (currentDocument && currentDocument.id === id) {
+        setCurrentDocument({ ...currentDocument, title: newTitle });
+      }
+    } catch (err) {
+      console.error('Failed to rename document:', err);
+      setError(err instanceof Error ? err.message : 'Failed to rename document');
+    }
+  }, [libraryName, currentDocument]);
 
+  // Update document content
+  const updateDocumentContent = useCallback(async (id: number, content: string) => {
+    if (!libraryName) return false;
+    
+    try {
+      // Call the API to update the document content
+      await api.updateDocument(libraryName, id, undefined, content);
+      
+      // Update current document if it's the one being updated
+      if (currentDocument && currentDocument.id === id) {
+        setCurrentDocument({ ...currentDocument, content });
+      }
+      
+      return true;
+    } catch (err) {
+      console.error('Failed to update document content:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update document content');
+      return false;
+    }
+  }, [libraryName, currentDocument]);
+  
   return {
     documents,
     isLoading,
@@ -128,5 +200,7 @@ export const useDocumentTree = (libraryName: string | null) => {
     createDocument,
     updateDocumentParent,
     handleCreateDocument,
+    renameDocument,
+    updateDocumentContent,
   };
 };

@@ -26,6 +26,7 @@ interface DocumentNodeProps {
   onCreateDocument: (parentId: number | null) => void;
   onUpdateDocumentParent: (id: number, parentId: number | null) => void;
   onRenameDocument?: (id: number, newTitle: string) => void;
+  allDocuments: Document[]; // All documents for ancestry checking
 }
 
 // The draggable and droppable document node
@@ -36,7 +37,8 @@ const DocumentNode: React.FC<DocumentNodeProps> = ({
   onSelect,
   onCreateDocument,
   onUpdateDocumentParent,
-  onRenameDocument
+  onRenameDocument,
+  allDocuments
 }) => {
   // Debug log for selection
   console.log(`Rendering document ${document.id} with isSelected=${isSelected}`);
@@ -64,8 +66,8 @@ const DocumentNode: React.FC<DocumentNodeProps> = ({
       }
     },
     canDrop: (item: { id: number }) => {
-      // Can't drop on self or children (would create circular reference)
-      return item.id !== document.id && !isChildOf(document, item.id);
+      // Check if the operation would create a circular reference
+      return !wouldCreateCircularReference(allDocuments, item.id, document.id);
     },
     collect: (monitor) => ({
       isOver: !!monitor.isOver(),
@@ -73,13 +75,54 @@ const DocumentNode: React.FC<DocumentNodeProps> = ({
     })
   });
 
-  // Helper function to check if a document is a child of another
-  const isChildOf = (parent: Document, childId: number): boolean => {
-    if (!parent.children) return false;
+  // Find a document by its ID in the document tree
+  const findDocumentById = (docs: Document[], id: number): Document | null => {
+    for (const doc of docs) {
+      if (doc.id === id) {
+        return doc;
+      }
+      if (doc.children && doc.children.length > 0) {
+        const found = findDocumentById(doc.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+  
+  // Check if document B is a descendant of document A
+  const isDescendantOf = (docA: Document, docBId: number): boolean => {
+    if (!docA.children || docA.children.length === 0) {
+      return false;
+    }
     
-    return parent.children.some(child => 
-      child.id === childId || isChildOf(child, childId)
-    );
+    // Check if any direct child matches docBId
+    for (const child of docA.children) {
+      if (child.id === docBId) {
+        return true;
+      }
+      // Recursively check children of children
+      if (isDescendantOf(child, docBId)) {
+        return true;
+      }
+    }
+    
+    return false;
+  };
+  
+  // Check if document with draggedId would create a circular reference if moved to targetId
+  const wouldCreateCircularReference = (allDocs: Document[], draggedId: number, targetId: number): boolean => {
+    // Case 1: Can't drop on self
+    if (draggedId === targetId) {
+      return true;
+    }
+    
+    // Case 2: Can't drop parent on its own child (or any descendant)
+    const draggedDoc = findDocumentById(allDocs, draggedId);
+    if (draggedDoc && isDescendantOf(draggedDoc, targetId)) {
+      return true;
+    }
+    
+    return false;
   };
 
   // Focus input when editing starts
@@ -210,11 +253,12 @@ const DocumentNode: React.FC<DocumentNodeProps> = ({
               key={child.id}
               document={child}
               level={level + 1}
-              isSelected={selectedDocumentId === child.id}
+              isSelected={isSelected && document.id === child.id}
               onSelect={onSelect}
               onCreateDocument={onCreateDocument}
               onUpdateDocumentParent={onUpdateDocumentParent}
               onRenameDocument={onRenameDocument}
+              allDocuments={allDocuments}
             />
           ))}
         </div>
@@ -250,7 +294,7 @@ const RootDropArea: React.FC<{
 
   return (
     <div ref={dropRef} className={className}>
-      <span>Drop here to move to root level</span>
+      <span>&nbsp;</span>
     </div>
   );
 };
@@ -268,7 +312,7 @@ const DocumentTree: React.FC<DocumentTreeProps> = ({
     <DndProvider backend={HTML5Backend}>
       <div className="document-tree">
         <div className="document-tree-header">
-          <h3>Documents</h3>
+          {/* <h3>Documents</h3> */}
           <button 
             className="add-root-button"
             onClick={() => onCreateDocument(null)}
@@ -296,6 +340,7 @@ const DocumentTree: React.FC<DocumentTreeProps> = ({
                   onCreateDocument={onCreateDocument}
                   onUpdateDocumentParent={onUpdateDocumentParent}
                   onRenameDocument={onRenameDocument}
+                  allDocuments={documents}
                 />
               ))}
               <RootDropArea onUpdateDocumentParent={onUpdateDocumentParent} />

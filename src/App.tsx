@@ -2,10 +2,14 @@ import { useState, useEffect } from 'react';
 import './App.css';
 import DocumentTree from './components/DocumentTree/DocumentTree';
 import LibraryModal from './components/Library/LibraryModal';
+import MarkdownEditor from './components/Editor/MarkdownEditor';
 import { useLibraries } from './hooks/useLibraries';
 import { useDocumentTree } from './hooks/useDocumentTree';
 
 function App() {
+  // State for document title editing
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState('');
   const {
     libraries,
     currentLibraryId,
@@ -24,6 +28,8 @@ function App() {
     currentDocument,
     updateDocumentParent,
     handleCreateDocument,
+    renameDocument,
+    updateDocumentContent,
   } = useDocumentTree(currentLibraryId);
 
   const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
@@ -34,10 +40,14 @@ function App() {
   useEffect(() => {
     if (currentDocument) {
       setEditedContent(currentDocument.content);
+      // Set to edit mode by default when a document is selected
+      setIsEditingDocument(true);
     } else {
       setEditedContent('');
+      setIsEditingDocument(false);
     }
-    setIsEditingDocument(false);
+    // Reset title editing state when document changes
+    setIsEditingTitle(false);
   }, [currentDocument]);
 
   // Handle document selection
@@ -49,11 +59,35 @@ function App() {
   const handleSaveDocument = async () => {
     if (!currentDocument) return;
     
-    // TODO: Implement document content update API
-    // For now, just update the UI state
-    setIsEditingDocument(false);
-    console.log('Saving document:', currentDocument.id, editedContent);
+    try {
+      await updateDocumentContent(currentDocument.id, editedContent);
+      setIsEditingDocument(false);
+    } catch (error) {
+      console.error('Error saving document:', error);
+      // Show error message to user here
+    }
   };
+
+  // Setup keyboard shortcut for saving document (Ctrl+S or Cmd+S)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Check if Ctrl key (Windows) or Command key (Mac) is pressed along with 'S'
+      if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+        event.preventDefault(); // Prevent browser's default save action
+        if (currentDocument && isEditingDocument) {
+          handleSaveDocument();
+        }
+      }
+    };
+    
+    // Add event listener
+    window.addEventListener('keydown', handleKeyDown);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [currentDocument, isEditingDocument, editedContent]);
 
   // Handle deleting a document
   const handleDeleteDocument = async (documentId: number) => {
@@ -133,6 +167,7 @@ function App() {
               onSelectDocument={handleSelectDocument}
               onCreateDocument={handleCreateDocument}
               onUpdateDocumentParent={updateDocumentParent}
+              onRenameDocument={renameDocument}
             />
           )}
         </aside>
@@ -142,12 +177,62 @@ function App() {
             {currentDocument ? (
               <div className="document-editor">
                 <div className="document-editor-header">
-                  <h2>{currentDocument.title}</h2>
+                  {isEditingTitle ? (
+                    <div className="title-edit-container">
+                      <input
+                        type="text"
+                        value={editedTitle}
+                        onChange={(e) => setEditedTitle(e.target.value)}
+                        onBlur={() => {
+                          if (editedTitle.trim() && editedTitle !== currentDocument.title) {
+                            renameDocument(currentDocument.id, editedTitle);
+                          }
+                          setIsEditingTitle(false);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            if (editedTitle.trim() && editedTitle !== currentDocument.title) {
+                              renameDocument(currentDocument.id, editedTitle);
+                            }
+                            setIsEditingTitle(false);
+                          } else if (e.key === 'Escape') {
+                            setEditedTitle(currentDocument.title);
+                            setIsEditingTitle(false);
+                          }
+                        }}
+                        autoFocus
+                      />
+                    </div>
+                  ) : (
+                    <h2 
+                      onDoubleClick={() => {
+                        setEditedTitle(currentDocument.title);
+                        setIsEditingTitle(true);
+                      }}
+                      className="document-title"
+                    >
+                      {currentDocument.title}
+                    </h2>
+                  )}
                   <div className="document-actions">
                     {isEditingDocument ? (
-                      <button onClick={handleSaveDocument} className="save-button">Save</button>
+                      <button 
+                        onClick={handleSaveDocument} 
+                        className="save-button"
+                      >
+                        Save
+                      </button>
                     ) : (
-                      <button onClick={() => setIsEditingDocument(true)} className="edit-button">Edit</button>
+                      <button 
+                        onClick={() => {
+                          console.log('Setting isEditingDocument to true');
+                          setIsEditingDocument(true);
+                        }} 
+                        className="edit-button"
+                        style={{ display: 'block', visibility: 'visible' }}
+                      >
+                        Edit
+                      </button>
                     )}
                     <button 
                       onClick={() => handleDeleteDocument(currentDocument.id)} 
@@ -158,17 +243,20 @@ function App() {
                   </div>
                 </div>
                 
-                {isEditingDocument ? (
-                  <textarea
-                    className="document-content-editor"
-                    value={editedContent}
-                    onChange={(e) => setEditedContent(e.target.value)}
-                  />
-                ) : (
-                  <div className="document-content-view">
-                    {currentDocument.content || <em>No content</em>}
-                  </div>
-                )}
+                {/* Always use the same content source to avoid editor resets */}
+                <MarkdownEditor
+                  markdownDocument={{
+                    id: String(currentDocument.id),
+                    title: currentDocument.title,
+                    content: editedContent,
+                    libraryId: currentLibraryId || '',
+                    categoryId: currentDocument.parent_id !== null ? String(currentDocument.parent_id) : '',
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                  }}
+                  onChange={setEditedContent}
+                  editable={isEditingDocument}
+                />
               </div>
             ) : (
               <div className="no-document-selected">

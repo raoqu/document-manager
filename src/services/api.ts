@@ -191,6 +191,82 @@ export const updateDocumentParent = async (
 };
 
 /**
+ * Update a document's title or content
+ * @param libraryName Name of the library
+ * @param id Document ID
+ * @param title New title (optional)
+ * @param content New content (optional)
+ * @returns Promise with the updated document
+ */
+/**
+ * Fetch a document by its ID
+ * @param libraryName Name of the library
+ * @param id Document ID
+ * @returns Promise with the document information
+ */
+export const getDocument = async (libraryName: string, id: number) => {
+  try {
+    const response = await fetch(`/api/document?library=${encodeURIComponent(libraryName)}&id=${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      try {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to fetch document: ${response.status} ${response.statusText}`);
+      } catch (jsonError) {
+        throw new Error(`Failed to fetch document: ${response.status} ${response.statusText}`);
+      }
+    }
+    
+    const document = await response.json();
+    return document;
+  } catch (error) {
+    console.error('Error fetching document:', error);
+    throw error;
+  }
+};
+
+export const updateDocument = async (
+  libraryName: string,
+  id: number,
+  title?: string,
+  content?: string
+) => {
+  try {
+    const updateData: { id: number; title?: string; content?: string } = { id };
+    
+    if (title !== undefined) updateData.title = title;
+    if (content !== undefined) updateData.content = content;
+    
+    const response = await fetch(`/api/document/update?library=${encodeURIComponent(libraryName)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updateData),
+    });
+    
+    if (!response.ok) {
+      try {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to update document: ${response.status} ${response.statusText}`);
+      } catch (jsonError) {
+        throw new Error(`Failed to update document: ${response.status} ${response.statusText}`);
+      }
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating document:', error);
+    throw error;
+  }
+};
+
+/**
  * Helper function to build a document tree from a flat list
  * @param documents Flat list of documents
  * @returns Tree structure of documents

@@ -187,12 +187,13 @@
 
 .root-drop-area {
   margin: 8px;
-  padding: 12px;
-  border: 2px dashed #e1e4e8;
+  padding: 4px;
+  /* border: 2px dashed #e1e4e8; */
   border-radius: 4px;
   text-align: center;
   color: #586069;
   transition: all 0.2s;
+  background-color: #eee;
 }
 
 .root-drop-area.can-drop {
