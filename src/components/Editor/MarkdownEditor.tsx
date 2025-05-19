@@ -103,6 +103,71 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onCha
     }
   };
 
+  // Handle image paste from clipboard
+  const handlePaste = async (event: ClipboardEvent) => {
+    if (!editor || !markdownDocument || !editable) return;
+    
+    const items = event.clipboardData?.items;
+    if (!items) return;
+    
+    // Look for image items in the clipboard
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') === 0) {
+        // Prevent the default paste behavior
+        event.preventDefault();
+        
+        // Get the image as a file
+        const file = items[i].getAsFile();
+        if (!file) continue;
+        
+        try {
+          console.log('Pasting image from clipboard...');
+          
+          // Upload the image to the server
+          const uploadResult = await api.uploadImage(
+            markdownDocument.libraryId,
+            parseInt(markdownDocument.id),
+            file
+          );
+          
+          // Insert the image into the editor
+          if (uploadResult && uploadResult.filename) {
+            const imageUrl = `/api/pic/${markdownDocument.libraryId}/${markdownDocument.id}/${uploadResult.filename}`;
+            editor.chain().focus().setImage({ src: imageUrl }).run();
+            console.log('Image pasted successfully:', imageUrl);
+          }
+        } catch (error) {
+          console.error('Error uploading pasted image:', error);
+          alert('Failed to upload pasted image. Please try again.');
+        }
+        
+        // Only process the first image
+        break;
+      }
+    }
+  };
+  
+  // Add paste event listener to the editor
+  useEffect(() => {
+    if (!editor || !editable) return;
+    
+    // Get the editor DOM element
+    const editorElement = editor.view.dom;
+    
+    // Create a type-safe event handler
+    const handlePasteEvent = (event: Event) => {
+      handlePaste(event as ClipboardEvent);
+    };
+    
+    // Add paste event listener
+    editorElement.addEventListener('paste', handlePasteEvent);
+    
+    // Cleanup
+    return () => {
+      editorElement.removeEventListener('paste', handlePasteEvent);
+    };
+  }, [editor, markdownDocument, editable]);
+  
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
