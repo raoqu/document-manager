@@ -28,7 +28,23 @@ export const useDocumentTree = (libraryName: string | null) => {
         
         // Select first document if available and none is selected
         if (documentTree.length > 0 && !selectedDocumentId) {
-          setSelectedDocumentId(documentTree[0].id);
+          // Set the selected document ID
+          const firstDocId = documentTree[0].id;
+          setSelectedDocumentId(firstDocId);
+          
+          // Also fetch the full document info for the first document
+          try {
+            const fullDoc = await api.getDocument(libraryName, firstDocId);
+            
+            // Merge the document info with the tree structure info
+            setCurrentDocument({
+              ...documentTree[0],
+              content: fullDoc.content,
+              title: fullDoc.title,
+            });
+          } catch (fetchErr) {
+            console.error('Failed to fetch first document info:', fetchErr);
+          }
         }
       } catch (err) {
         console.error('Failed to fetch document tree:', err);

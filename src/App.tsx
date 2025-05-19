@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './App.css';
 import DocumentTree from './components/DocumentTree/DocumentTree';
 import LibraryModal from './components/Library/LibraryModal';
@@ -35,23 +35,65 @@ function App() {
   const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
   const [isEditingDocument, setIsEditingDocument] = useState(false);
   const [editedContent, setEditedContent] = useState('');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
+  // Track the previous document ID to detect actual document changes
+  const prevDocumentIdRef = useRef<number | null>(null);
+  
   // Initialize edited content when current document changes
   useEffect(() => {
+    // Only run this effect if we have a current document
+    if (!currentDocument) {
+      prevDocumentIdRef.current = null;
+      setEditedContent('');
+      setIsEditingDocument(false);
+      setHasUnsavedChanges(false);
+      return;
+    }
+    
+    // Skip the rest of the effect if this is the initial load
+    if (prevDocumentIdRef.current === null) {
+      prevDocumentIdRef.current = currentDocument.id;
+      setEditedContent(currentDocument.content);
+      setIsEditingDocument(true);
+      return;
+    }
+    
+    // Update the previous document ID reference
     if (currentDocument) {
+      prevDocumentIdRef.current = currentDocument.id;
       setEditedContent(currentDocument.content);
       // Set to edit mode by default when a document is selected
       setIsEditingDocument(true);
     } else {
+      prevDocumentIdRef.current = null;
       setEditedContent('');
       setIsEditingDocument(false);
     }
-    // Reset title editing state when document changes
+    
+    // Reset states when document changes
     setIsEditingTitle(false);
+    // Reset unsaved changes when document changes
+    setHasUnsavedChanges(false);
   }, [currentDocument]);
 
-  // Handle document selection
+  // Handle document selection with unsaved changes check
   const handleSelectDocument = (documentId: number) => {
+    // Don't do anything if trying to select the current document
+    if (selectedDocumentId === documentId) return;
+    
+    // Check for unsaved changes before switching documents
+    if (hasUnsavedChanges) {
+      const confirmChange = window.confirm('You have unsaved changes. Do you want to discard them?');
+      if (!confirmChange) {
+        // User canceled, don't switch documents
+        return;
+      }
+      // User confirmed, proceed with document switch and reset unsaved changes
+      setHasUnsavedChanges(false);
+    }
+    
+    // Switch to the selected document
     setSelectedDocumentId(documentId);
   };
 
@@ -62,9 +104,10 @@ function App() {
     try {
       await updateDocumentContent(currentDocument.id, editedContent);
       setIsEditingDocument(false);
+      setHasUnsavedChanges(false); // Clear unsaved changes flag after successful save
     } catch (error) {
       console.error('Error saving document:', error);
-      // Show error message to user here
+      alert('Error saving document. Please try again.');
     }
   };
 
@@ -88,6 +131,26 @@ function App() {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [currentDocument, isEditingDocument, editedContent]);
+  
+  // Setup beforeunload event to warn about unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        // Standard way to show a confirmation dialog when closing the browser
+        const message = 'You have unsaved changes. Are you sure you want to leave?';
+        event.returnValue = message; // For Chrome
+        return message; // For other browsers
+      }
+    };
+    
+    // Add event listener
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
 
   // Handle deleting a document
   const handleDeleteDocument = async (documentId: number) => {
@@ -254,7 +317,15 @@ function App() {
                     createdAt: new Date(),
                     updatedAt: new Date()
                   }}
-                  onChange={setEditedContent}
+                  onChange={(content) => {
+                    setEditedContent(content);
+                    // Set unsaved changes flag when content changes
+                    if (currentDocument && content !== currentDocument.content) {
+                      setHasUnsavedChanges(true);
+                    } else {
+                      setHasUnsavedChanges(false);
+                    }
+                  }}
                   editable={isEditingDocument}
                 />
               </div>

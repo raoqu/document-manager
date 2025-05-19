@@ -204,6 +204,40 @@ export const updateDocumentParent = async (
  * @param id Document ID
  * @returns Promise with the document information
  */
+/**
+ * Upload an image for a specific document
+ * @param libraryName Name of the library
+ * @param documentId Document ID
+ * @param file File to upload
+ * @returns Promise with the upload response
+ */
+export const uploadImage = async (libraryName: string, documentId: number, file: File) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await fetch(`/api/upload/${documentId}?library=${encodeURIComponent(libraryName)}`, {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      try {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to upload image: ${response.status} ${response.statusText}`);
+      } catch (jsonError) {
+        throw new Error(`Failed to upload image: ${response.status} ${response.statusText}`);
+      }
+    }
+    
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    throw error;
+  }
+};
+
 export const getDocument = async (libraryName: string, id: number) => {
   try {
     const response = await fetch(`/api/document?library=${encodeURIComponent(libraryName)}&id=${id}`, {
