@@ -2,6 +2,14 @@
  * API service for interacting with the backend
  */
 
+// Library interface for the frontend
+export interface Library {
+  id: string;
+  name: string;
+  path: string;
+  createdAt: Date;
+}
+
 // Document interface matching the backend model
 export interface Document {
   id: number;

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import type { Library } from '../types';
 import { generateId, saveToLocalStorage, loadFromLocalStorage, STORAGE_KEYS } from '../utils/helpers';
 import * as api from '../services/api';
+import type { Library } from '../services/api';
 
 export const useLibraries = () => {
   const [libraries, setLibraries] = useState<Library[]>([]);

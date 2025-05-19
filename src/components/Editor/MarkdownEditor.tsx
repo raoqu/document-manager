@@ -82,17 +82,27 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onCha
     try {
       // Show loading indicator or disable button if needed
       
+      // Ensure libraryId is a string and documentId is a number
+      const libraryId = markdownDocument.libraryId || '';
+      // Convert id to number, handling both string and number types
+      const documentId = typeof markdownDocument.id === 'string' ? parseInt(markdownDocument.id) : markdownDocument.id;
+      
+      if (!libraryId) {
+        console.error('Library ID is missing');
+        return;
+      }
+      
       // Upload the image to the server
       const uploadResult = await api.uploadImage(
-        markdownDocument.libraryId,
-        parseInt(markdownDocument.id),
+        libraryId,
+        documentId,
         file
       );
       
       // Insert the image into the editor
       if (uploadResult && uploadResult.filename) {
         // Store only the filename and construct the URL when displaying
-        const imageUrl = `/api/pic/${markdownDocument.libraryId}/${markdownDocument.id}/${uploadResult.filename}`;
+        const imageUrl = `/api/pic/${libraryId}/${markdownDocument.id}/${uploadResult.filename}`;
         editor?.chain().focus().setImage({ src: imageUrl }).run();
       }
       
@@ -133,16 +143,26 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onCha
         try {
           console.log('Pasting image from clipboard...');
           
+          // Ensure libraryId is a string and documentId is a number
+          const libraryId = markdownDocument.libraryId || '';
+          // Convert id to number, handling both string and number types
+          const documentId = typeof markdownDocument.id === 'string' ? parseInt(markdownDocument.id) : markdownDocument.id;
+          
+          if (!libraryId) {
+            console.error('Library ID is missing');
+            return;
+          }
+          
           // Upload the image to the server
           const uploadResult = await api.uploadImage(
-            markdownDocument.libraryId,
-            parseInt(markdownDocument.id),
+            libraryId,
+            documentId,
             file
           );
           
           // Insert the image into the editor
           if (uploadResult && uploadResult.filename) {
-            const imageUrl = `/api/pic/${markdownDocument.libraryId}/${markdownDocument.id}/${uploadResult.filename}`;
+            const imageUrl = `/api/pic/${libraryId}/${markdownDocument.id}/${uploadResult.filename}`;
             editor.chain().focus().setImage({ src: imageUrl }).run();
             console.log('Image pasted successfully:', imageUrl);
           }

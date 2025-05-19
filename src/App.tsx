@@ -36,6 +36,7 @@ function App() {
   const [isEditingDocument, setIsEditingDocument] = useState(false);
   const [editedContent, setEditedContent] = useState('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Track the previous document ID to detect actual document changes
   const prevDocumentIdRef = useRef<number | null>(null);
@@ -191,7 +192,16 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Markdown Manager</h1>
+        <div className="header-left">
+          <button 
+            className="mobile-menu-toggle" 
+            onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+            aria-label="Toggle sidebar"
+          >
+            ☰
+          </button>
+          <h1>Markdown Manager</h1>
+        </div>
         <div className="library-selector">
           <div className="library-dropdown">
             {isLibrariesLoading ? (
@@ -228,7 +238,13 @@ function App() {
       </header>
       
       <main className="app-main">
-        <aside className="app-sidebar">
+        {isMobileSidebarOpen && (
+          <div 
+            className="sidebar-overlay" 
+            onClick={() => setIsMobileSidebarOpen(false)}
+          />
+        )}
+        <aside className={`app-sidebar ${isMobileSidebarOpen ? 'mobile-open' : ''}`}>
           {isDocumentsLoading ? (
             <div className="loading-indicator">Loading documents...</div>
           ) : documentsError ? (
