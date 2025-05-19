@@ -238,13 +238,13 @@
 }
 
 .document-actions button {
-  padding: 8px 16px;
+  padding: 2px;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
-  min-width: 60px;
+  min-width: 30px;
   display: inline-block;
 }
 
@@ -400,11 +400,6 @@
   border-radius: 4px;
   width: 100%;
   max-width: 500px;
-}
-
-.document-actions {
-  display: flex;
-  gap: 0.5rem;
 }
 
 .document-preview {

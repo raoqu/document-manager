@@ -195,7 +195,7 @@ const DocumentNode: React.FC<DocumentNodeProps> = ({
   }, [isSelected, document.id]);
 
   return (
-    <div className="document-tree-item" style={{ paddingLeft: `${level * 20}px` }}>
+    <div className="document-tree-item" style={{ paddingLeft: `${level * 6}px` }}>
       <div 
         ref={nodeRef}
         className={nodeClasses}
@@ -219,6 +219,7 @@ const DocumentNode: React.FC<DocumentNodeProps> = ({
         {isEditing ? (
           <input
             type="text"
+            className="inplace-edit"
             value={editTitle}
             onChange={(e) => setEditTitle(e.target.value)}
             onBlur={handleSaveTitle}
@@ -235,15 +236,18 @@ const DocumentNode: React.FC<DocumentNodeProps> = ({
           </span>
         )}
         
-        <div className="document-actions">
-          <button 
-            className="add-child-button"
-            onClick={handleAddChild}
-            title="Add child document"
-          >
-            +
-          </button>
-        </div>
+        {/* Only show document actions when not editing */}
+        {!isEditing && (
+          <div className="document-actions">
+            <button 
+              className="add-child-button"
+              onClick={handleAddChild}
+              title="Add child document"
+            >
+              +
+            </button>
+          </div>
+        )}
       </div>
 
       {isExpanded && document.children && document.children.length > 0 && (
