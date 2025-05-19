@@ -14,6 +14,10 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
+  overflow-x: auto;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .editor-toolbar button {
@@ -155,6 +159,19 @@
   margin: 0.5em 0;
   padding-left: 1em;
   color: #6a737d;
+}
+
+.shortcut-hint {
+  margin-left: auto;
+  font-size: 12px;
+  color: #6a737d;
+}
+
+/* Hide shortcut hint on mobile devices */
+@media (max-width: 768px) {
+  .shortcut-hint {
+    display: none;
+  }
 }
 
 .ProseMirror pre {

@@ -1,0 +1,113 @@
+/* Editor Icon Buttons CSS */
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 4px;
+  background-color: transparent;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  color: #444;
+}
+
+.icon-button:hover {
+  background-color: #f0f0f0;
+  border-color: #ccc;
+}
+
+.icon-button.active {
+  background-color: #e6f7ff;
+  border-color: #91d5ff;
+  color: #1890ff;
+}
+
+/* Save button specific styling */
+.icon-button.save-button {
+  background-color: #4CAF50;
+  color: white;
+  border-color: #45a049;
+}
+
+.icon-button.save-button:hover {
+  background-color: #45a049;
+}
+
+/* Icon styles */
+.icon-button i {
+  font-size: 18px;
+}
+
+/* Tooltip styles */
+.icon-button .tooltip {
+  visibility: hidden;
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.icon-button:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Separator */
+.toolbar-separator {
+  display: inline-block;
+  width: 1px;
+  height: 24px;
+  background-color: #ddd;
+  margin: 0 8px;
+}
+
+/* Table controls group */
+.table-controls-group {
+  display: inline-flex;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-right: 8px;
+}
+
+.table-controls-group .icon-button {
+  border-radius: 0;
+  border: none;
+  border-right: 1px solid #ddd;
+  width: 32px;
+  height: 32px;
+}
+
+.table-controls-group .icon-button:last-child {
+  border-right: none;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .icon-button {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .icon-button i {
+    font-size: 16px;
+  }
+  
+  .toolbar-separator {
+    margin: 0 4px;
+  }
+}

@@ -8,6 +8,7 @@ import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
 import './MarkdownEditor.css';
+import './editor-icons.css';
 import * as api from '../../services/api';
 import type { MarkdownDocument } from '../../types';
 
@@ -305,47 +306,150 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onCha
   return (
     <div className="editor-container">
       <div className="editor-toolbar">
+        {/* Main toolbar controls */}
         {editable && onSave && (
           <button 
-            className="save-button" 
+            className="icon-button save-button" 
             onClick={onSave}
-            title="Save document (Ctrl+S)"
+            title="Save document"
           >
-            Save
+            <i className="fas fa-save"></i>
+            <span className="tooltip">Save (Ctrl+S)</span>
           </button>
         )}
-        <button onClick={handleImageUpload}>Insert Image</button>
-        <button onClick={handleLinkInsert}>Link</button>
+        
+        <div className="toolbar-separator"></div>
+        
+        <button 
+          className="icon-button" 
+          onClick={handleImageUpload}
+          title="Insert image"
+        >
+          <i className="fas fa-image"></i>
+          <span className="tooltip">Insert Image</span>
+        </button>
+        
+        <button 
+          className="icon-button" 
+          onClick={handleLinkInsert}
+          title="Insert link"
+        >
+          <i className="fas fa-link"></i>
+          <span className="tooltip">Insert Link</span>
+        </button>
+        
+        <div className="toolbar-separator"></div>
         
         {/* Table controls */}
-        <div className="table-controls">
-          <button onClick={handleInsertTable}>Insert Table</button>
-          
-          {/* Only show these controls when a table is selected */}
-          {editor?.isActive('table') && (
-            <>
-              <div className="table-row-controls">
-                <button onClick={handleAddRowBefore}>Add Row Before</button>
-                <button onClick={handleAddRowAfter}>Add Row After</button>
-                <button onClick={handleDeleteRow}>Delete Row</button>
-              </div>
+        <button 
+          className={`icon-button ${editor?.isActive('table') ? 'active' : ''}`}
+          onClick={handleInsertTable}
+          title="Insert table"
+        >
+          <i className="fas fa-table"></i>
+          <span className="tooltip">Insert Table</span>
+        </button>
+        
+        {/* Only show these controls when a table is selected */}
+        {editor?.isActive('table') && (
+          <>
+            <div className="table-controls-group">
+              <button 
+                className="icon-button" 
+                onClick={handleAddRowBefore}
+                title="Add row before"
+              >
+                <i className="fas fa-arrow-up"></i>
+                <span className="tooltip">Add Row Before</span>
+              </button>
               
-              <div className="table-column-controls">
-                <button onClick={handleAddColumnBefore}>Add Column Before</button>
-                <button onClick={handleAddColumnAfter}>Add Column After</button>
-                <button onClick={handleDeleteColumn}>Delete Column</button>
-              </div>
+              <button 
+                className="icon-button" 
+                onClick={handleAddRowAfter}
+                title="Add row after"
+              >
+                <i className="fas fa-arrow-down"></i>
+                <span className="tooltip">Add Row After</span>
+              </button>
               
-              <div className="table-cell-controls">
-                <button onClick={handleToggleHeaderCell}>Toggle Header</button>
-                <button onClick={handleMergeCells}>Merge Cells</button>
-                <button onClick={handleSplitCell}>Split Cell</button>
-              </div>
+              <button 
+                className="icon-button" 
+                onClick={handleDeleteRow}
+                title="Delete row"
+              >
+                <i className="fas fa-minus"></i>
+                <span className="tooltip">Delete Row</span>
+              </button>
+            </div>
+            
+            <div className="table-controls-group">
+              <button 
+                className="icon-button" 
+                onClick={handleAddColumnBefore}
+                title="Add column before"
+              >
+                <i className="fas fa-arrow-left"></i>
+                <span className="tooltip">Add Column Before</span>
+              </button>
               
-              <button onClick={handleDeleteTable}>Delete Table</button>
-            </>
-          )}
-        </div>
+              <button 
+                className="icon-button" 
+                onClick={handleAddColumnAfter}
+                title="Add column after"
+              >
+                <i className="fas fa-arrow-right"></i>
+                <span className="tooltip">Add Column After</span>
+              </button>
+              
+              <button 
+                className="icon-button" 
+                onClick={handleDeleteColumn}
+                title="Delete column"
+              >
+                <i className="fas fa-minus fa-rotate-90"></i>
+                <span className="tooltip">Delete Column</span>
+              </button>
+            </div>
+            
+            <div className="table-controls-group">
+              <button 
+                className="icon-button" 
+                onClick={handleToggleHeaderCell}
+                title="Toggle header"
+              >
+                <i className="fas fa-heading"></i>
+                <span className="tooltip">Toggle Header</span>
+              </button>
+              
+              <button 
+                className="icon-button" 
+                onClick={handleMergeCells}
+                title="Merge cells"
+              >
+                <i className="fas fa-compress-alt"></i>
+                <span className="tooltip">Merge Cells</span>
+              </button>
+              
+              <button 
+                className="icon-button" 
+                onClick={handleSplitCell}
+                title="Split cell"
+              >
+                <i className="fas fa-expand-alt"></i>
+                <span className="tooltip">Split Cell</span>
+              </button>
+            </div>
+            
+            <button 
+              className="icon-button" 
+              onClick={handleDeleteTable}
+              title="Delete table"
+            >
+              <i className="fas fa-trash-alt"></i>
+              <span className="tooltip">Delete Table</span>
+            </button>
+          </>
+        )}
         
         {editable && (
           <span className="shortcut-hint">
