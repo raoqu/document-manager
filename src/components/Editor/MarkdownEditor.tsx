@@ -18,9 +18,10 @@ interface MarkdownEditorProps {
   onSave?: () => void; // Function to save the document
   onShare?: () => void; // Function to share the document
   editable?: boolean; // Whether the editor should be in edit mode
+  showToast?: (message: string, type: 'success' | 'error' | 'info') => void;
 }
 
-const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onChange, onSave, onShare, editable = true }) => {
+const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onChange, onSave, onShare, editable = true, showToast }) => {
   // Create the editor with initial configuration
   const editor = useEditor({
     // We'll control editable state via useEffect
@@ -115,7 +116,8 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onCha
       }
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Failed to upload image. Please try again.');
+      showToast ? showToast('Failed to upload image. Please try again.', 'error') : 
+                 console.error('Failed to upload image');
     }
   };
 
@@ -171,7 +173,8 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onCha
           }
         } catch (error) {
           console.error('Error uploading pasted image:', error);
-          alert('Failed to upload pasted image. Please try again.');
+          showToast ? showToast('Failed to upload pasted image. Please try again.', 'error') : 
+                     console.error('Failed to upload pasted image');
         }
         
         // Only process the first image

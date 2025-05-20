@@ -5,11 +5,14 @@ import LibraryModal from './components/Library/LibraryModal';
 import MarkdownEditor from './components/Editor/MarkdownEditor';
 import { useLibraries } from './hooks/useLibraries';
 import { useDocumentTree } from './hooks/useDocumentTree';
+import ToastContainer from './components/Toast/ToastContainer';
+import useToast from './hooks/useToast';
 
 function App() {
   // State for document title editing
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
+  const { toasts, showToast, removeToast } = useToast();
   const {
     libraries,
     currentLibraryId,
@@ -128,9 +131,10 @@ function App() {
       await updateDocumentContent(currentDocument.id, editedContent);
       setIsEditingDocument(false);
       setHasUnsavedChanges(false); // Clear unsaved changes flag after successful save
+      showToast('Document saved successfully', 'success');
     } catch (error) {
       console.error('Error saving document:', error);
-      alert('Error saving document. Please try again.');
+      showToast('Error saving document. Please try again.', 'error');
     }
   };
 
@@ -213,11 +217,11 @@ function App() {
     // Copy the URL to clipboard
     navigator.clipboard.writeText(url.toString())
       .then(() => {
-        alert('Share link copied to clipboard!');
+        showToast('Share link copied to clipboard!', 'success');
       })
       .catch(err => {
         console.error('Failed to copy link:', err);
-        alert('Failed to copy link. Please try again.');
+        showToast('Failed to copy link. Please try again.', 'error');
       });
   };
   
@@ -226,22 +230,17 @@ function App() {
     try {
       const newLibrary = await createLibrary(name, path);
       setCurrentLibraryId(newLibrary.id);
+      showToast(`Library "${name}" created successfully`, 'success');
     } catch (error) {
-      alert(`Failed to create library: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showToast(`Failed to create library: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
     }
   };
 
   return (
     <div className="app">
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
       <header className="app-header">
         <div className="header-left">
-          <button 
-            className="mobile-menu-toggle" 
-            onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-            aria-label="Toggle sidebar"
-          >
-            ☰
-          </button>
           <h1>Markdown Manager</h1>
         </div>
         <div className="library-selector">
@@ -308,6 +307,13 @@ function App() {
             {currentDocument ? (
               <div className="document-editor">
                 <div className="document-editor-header">
+                  <button 
+                    className="mobile-menu-toggle document-header-menu-toggle" 
+                    onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+                    aria-label="Toggle sidebar"
+                  >
+                    ☰
+                  </button>
                   {isEditingTitle ? (
                     <div className="title-edit-container">
                       <input
@@ -397,6 +403,7 @@ function App() {
                   onSave={isEditingDocument ? handleSaveDocument : undefined}
                   onShare={handleShareDocument}
                   editable={isEditingDocument}
+                  showToast={showToast}
                 />
               </div>
             ) : (
