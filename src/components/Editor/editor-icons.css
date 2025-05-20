@@ -37,6 +37,17 @@
   background-color: #45a049;
 }
 
+/* Share button specific styling */
+.icon-button.share-button {
+  background-color: #2196F3;
+  color: white;
+  border-color: #0b7dda;
+}
+
+.icon-button.share-button:hover {
+  background-color: #0b7dda;
+}
+
 /* Icon styles */
 .icon-button i {
   font-size: 18px;

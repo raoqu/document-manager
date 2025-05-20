@@ -16,10 +16,11 @@ interface MarkdownEditorProps {
   markdownDocument: MarkdownDocument | null;
   onChange: (content: string) => void;
   onSave?: () => void; // Function to save the document
+  onShare?: () => void; // Function to share the document
   editable?: boolean; // Whether the editor should be in edit mode
 }
 
-const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onChange, onSave, editable = true }) => {
+const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onChange, onSave, onShare, editable = true }) => {
   // Create the editor with initial configuration
   const editor = useEditor({
     // We'll control editable state via useEffect
@@ -319,6 +320,17 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onCha
         )}
         
         <div className="toolbar-separator"></div>
+        
+        {markdownDocument && onShare && (
+          <button 
+            className="icon-button share-button" 
+            onClick={onShare}
+            title="Share document"
+          >
+            <i className="fas fa-share-alt"></i>
+            <span className="tooltip">Share Link</span>
+          </button>
+        )}
         
         <button 
           className="icon-button" 

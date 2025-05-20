@@ -41,6 +41,28 @@ function App() {
   // Track the previous document ID to detect actual document changes
   const prevDocumentIdRef = useRef<number | null>(null);
   
+  // Parse URL parameters when the app loads
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const libId = params.get('lib');
+    const docId = params.get('doc');
+    
+    // If we have both library and document IDs in the URL
+    if (libId && docId) {
+      // Set the library ID first
+      setCurrentLibraryId(libId);
+      
+      // Set the document ID after a short delay to ensure the library has loaded
+      const docIdNum = parseInt(docId);
+      if (!isNaN(docIdNum)) {
+        // Use a timeout to ensure the library has loaded and documents are fetched
+        setTimeout(() => {
+          setSelectedDocumentId(docIdNum);
+        }, 500);
+      }
+    }
+  }, []);
+  
   // Initialize edited content when current document changes
   useEffect(() => {
     // Only run this effect if we have a current document
@@ -177,6 +199,26 @@ function App() {
   // Handle creating a new library
   const handleCreateNewLibrary = () => {
     setIsLibraryModalOpen(true);
+  };
+  
+  // Handle sharing document via URL
+  const handleShareDocument = () => {
+    if (!currentDocument || !currentLibraryId) return;
+    
+    // Create a URL with library and document IDs as query parameters
+    const url = new URL(window.location.href);
+    url.searchParams.set('lib', currentLibraryId);
+    url.searchParams.set('doc', String(currentDocument.id));
+    
+    // Copy the URL to clipboard
+    navigator.clipboard.writeText(url.toString())
+      .then(() => {
+        alert('Share link copied to clipboard!');
+      })
+      .catch(err => {
+        console.error('Failed to copy link:', err);
+        alert('Failed to copy link. Please try again.');
+      });
   };
   
   // Handle saving a new library from modal
@@ -353,6 +395,7 @@ function App() {
                     }
                   }}
                   onSave={isEditingDocument ? handleSaveDocument : undefined}
+                  onShare={handleShareDocument}
                   editable={isEditingDocument}
                 />
               </div>
