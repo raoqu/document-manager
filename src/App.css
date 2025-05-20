@@ -493,7 +493,7 @@
 
 .ProseMirror {
   flex: 1;
-  padding: 1rem;
+  padding: 8px;
   overflow-y: auto;
   outline: none;
   min-height: 200px;
