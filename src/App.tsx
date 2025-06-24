@@ -44,11 +44,18 @@ function App() {
   // Track the previous document ID to detect actual document changes
   const prevDocumentIdRef = useRef<number | null>(null);
   
+  // State to track if library selector should be shown
+  const [showLibrarySelector, setShowLibrarySelector] = useState(false);
+
   // Parse URL parameters when the app loads
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const libId = params.get('lib');
     const docId = params.get('doc');
+    const showParam = params.get('show');
+    
+    // Set showLibrarySelector based on URL parameter existence
+    setShowLibrarySelector(showParam !== null);
     
     // If we have both library and document IDs in the URL
     if (libId && docId) {
@@ -243,7 +250,8 @@ function App() {
         <div className="header-left">
           <h1>Markdown Manager</h1>
         </div>
-        <div className="library-selector">
+        {showLibrarySelector && (
+          <div className="library-selector">
           <div className="library-dropdown">
             {isLibrariesLoading ? (
               <div className="loading-indicator">Loading libraries...</div>
@@ -276,6 +284,7 @@ function App() {
             )}
           </div>
         </div>
+        )}
       </header>
       
       <main className="app-main">
