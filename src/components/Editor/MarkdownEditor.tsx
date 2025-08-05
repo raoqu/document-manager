@@ -329,9 +329,10 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onCha
 
   return (
     <div className="editor-container">
-      <div className="editor-toolbar">
+      {editable && (
+        <div className="editor-toolbar">
         {/* Main toolbar controls */}
-        {editable && onSave && (
+        {onSave && (
           <button 
             className="icon-button save-button" 
             onClick={onSave}
@@ -538,11 +539,9 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onCha
           </>
         )}
         
-        {editable && (
-          <span className="shortcut-hint">
-            Press <kbd>Ctrl</kbd>+<kbd>S</kbd> or <kbd>⌘</kbd>+<kbd>S</kbd> to save
-          </span>
-        )}
+        <span className="shortcut-hint">
+          Press <kbd>Ctrl</kbd>+<kbd>S</kbd> or <kbd>⌘</kbd>+<kbd>S</kbd> to save
+        </span>
         {/* Hidden file input for image uploads */}
         <input
           type="file"
@@ -552,6 +551,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onCha
           onChange={handleImageFileSelected}
         />
       </div>
+      )}
       <EditorContent editor={editor} className="editor-content" />
     </div>
   );

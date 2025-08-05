@@ -76,6 +76,7 @@ function App() {
         
         // Split the decoded string to get library ID and document ID
         const [decodedLibId, decodedDocId] = decodedString.split(',');
+        console.log(decodedLibId, decodedDocId);
         
         if (decodedLibId && decodedDocId) {
           // Set the library ID first
