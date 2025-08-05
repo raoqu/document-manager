@@ -46,6 +46,9 @@ function App() {
   
   // State to track if library selector should be shown
   const [showLibrarySelector, setShowLibrarySelector] = useState(false);
+  
+  // State to track if we're in read-only view mode (from param URL)
+  const [isReadOnlyViewMode, setIsReadOnlyViewMode] = useState(false);
 
   // Parse URL parameters when the app loads
   useEffect(() => {
@@ -58,8 +61,48 @@ function App() {
     // Set showLibrarySelector based on URL parameter existence
     setShowLibrarySelector(showParam !== null);
     
+    // Check if we have a 'param' parameter for read-only view mode
+    if (param) {
+      // Set read-only view mode
+      setIsReadOnlyViewMode(true);
+      
+      try {
+        // Reverse the base64 string
+        const reversedBase64 = param;
+        const base64String = reversedBase64.split('').reverse().join('');
+        
+        // Decode the base64 string
+        const decodedString = atob(base64String);
+        
+        // Split the decoded string to get library ID and document ID
+        const [decodedLibId, decodedDocId] = decodedString.split(',');
+        
+        if (decodedLibId && decodedDocId) {
+          // Set the library ID first
+          setCurrentLibraryId(decodedLibId);
+          
+          // Set the document ID after a short delay to ensure the library has loaded
+          const docIdNum = parseInt(decodedDocId);
+          setTimeout(() => {
+            // Use the same approach as in the regular URL parameter handling
+            if (documents) {
+              const targetDoc = documents.find(doc => doc.id === docIdNum);
+              if (targetDoc) {
+                // Use the same approach as in handleSelectDocument
+                setSelectedDocumentId(docIdNum);
+                setEditedContent(targetDoc.content);
+                setIsEditingDocument(false); // Ensure we're in view mode
+              }
+            }
+          }, 500);
+        }
+      } catch (error) {
+        console.error('Failed to decode param:', error);
+        showToast('Invalid share link', 'error');
+      }
+    }
     // If we have both library and document IDs in the URL
-    if (libId && docId) {
+    else if (libId && docId) {
       // Set the library ID first
       setCurrentLibraryId(libId);
       
@@ -294,86 +337,102 @@ function App() {
   };
 
   return (
-    <div className="app">
+    <div className={`app ${isReadOnlyViewMode ? 'read-only-mode' : ''}`}>
       <ToastContainer toasts={toasts} removeToast={removeToast} />
-      <header className="app-header">
-        <div className="header-left">
-          <h1>Markdown Manager</h1>
-        </div>
-        {showLibrarySelector && (
-          <div className="library-selector">
-          <div className="library-dropdown">
-            {isLibrariesLoading ? (
-              <div className="loading-indicator">Loading libraries...</div>
-            ) : librariesError ? (
-              <div className="error-message">Error: {librariesError}</div>
-            ) : (
-              <>
-                <select 
-                  value={currentLibraryId || ''}
-                  onChange={(e) => {
-                    handleLibraryChange(e.target.value);
-                  }}
-                  disabled={libraries.length === 0}
-                >
-                  {libraries.length === 0 ? (
-                    <option value="">No libraries available</option>
-                  ) : (
-                    libraries.map(lib => (
-                      <option key={lib.id} value={lib.id}>{lib.name}</option>
-                    ))
-                  )}
-                </select>
-                <button 
-                  className="create-library-button" 
-                  onClick={handleCreateNewLibrary}
-                >
-                  + New Library
-                </button>
-              </>
+      
+      {/* Only show header in normal mode */}
+      {!isReadOnlyViewMode && (
+        <header className="app-header">
+          <div className="header-left">
+            <h1>Markdown Manager</h1>
+            {showLibrarySelector && (
+              <div className="library-selector">
+                {isLibrariesLoading ? (
+                  <div className="loading-indicator">Loading libraries...</div>
+                ) : librariesError ? (
+                  <div className="error-message">Error: {librariesError}</div>
+                ) : (
+                  <>
+                    <select
+                      value={currentLibraryId || ''}
+                      onChange={(e) => {
+                        handleLibraryChange(e.target.value);
+                      }}
+                      disabled={libraries.length === 0}
+                    >
+                      {libraries.length === 0 ? (
+                        <option value="">No libraries available</option>
+                      ) : (
+                        libraries.map(lib => (
+                          <option key={lib.id} value={lib.id}>{lib.name}</option>
+                        ))
+                      )}
+                    </select>
+                    <button 
+                      className="create-library-button" 
+                      onClick={handleCreateNewLibrary}
+                    >
+                      + New Library
+                    </button>
+                  </>
+                )}
+              </div>
             )}
           </div>
-        </div>
-        )}
-      </header>
+        </header>
+      )}
       
       <main className="app-main">
-        {isMobileSidebarOpen && (
-          <div 
-            className="sidebar-overlay" 
-            onClick={() => setIsMobileSidebarOpen(false)}
-          />
+        {/* Only show sidebar overlay and sidebar in normal mode */}
+        {!isReadOnlyViewMode && (
+          <>
+            {isMobileSidebarOpen && (
+              <div 
+                className="sidebar-overlay" 
+                onClick={() => setIsMobileSidebarOpen(false)}
+              />
+            )}
+            <aside className={`app-sidebar ${isMobileSidebarOpen ? 'mobile-open' : ''}`}>
+              {isDocumentsLoading ? (
+                <div className="loading-indicator">Loading documents...</div>
+              ) : documentsError ? (
+                <div className="error-message">Error: {documentsError}</div>
+              ) : (
+                <DocumentTree
+                  documents={documents}
+                  selectedDocumentId={selectedDocumentId}
+                  onSelectDocument={handleSelectDocument}
+                  onCreateDocument={handleCreateDocument}
+                  onUpdateDocumentParent={updateDocumentParent}
+                  onRenameDocument={renameDocument}
+                />
+              )}
+            </aside>
+          </>
         )}
-        <aside className={`app-sidebar ${isMobileSidebarOpen ? 'mobile-open' : ''}`}>
-          {isDocumentsLoading ? (
-            <div className="loading-indicator">Loading documents...</div>
-          ) : documentsError ? (
-            <div className="error-message">Error: {documentsError}</div>
-          ) : (
-            <DocumentTree
-              documents={documents}
-              selectedDocumentId={selectedDocumentId}
-              onSelectDocument={handleSelectDocument}
-              onCreateDocument={handleCreateDocument}
-              onUpdateDocumentParent={updateDocumentParent}
-              onRenameDocument={renameDocument}
-            />
-          )}
-        </aside>
         
         <section className="app-content">
           <div className="document-section">
             {currentDocument ? (
               <div className="document-editor">
                 <div className="document-editor-header">
-                  <button 
-                    className="mobile-menu-toggle document-header-menu-toggle" 
-                    onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-                    aria-label="Toggle sidebar"
-                  >
-                    ☰
-                  </button>
-                  {isEditingTitle ? (
+                  {/* Only show mobile menu toggle in normal mode */}
+                  {!isReadOnlyViewMode && (
+                    <button 
+                      className="mobile-menu-toggle document-header-menu-toggle" 
+                      onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+                      aria-label="Toggle sidebar"
+                    >
+                      ☰
+                    </button>
+                  )}
+                  
+                  {/* In read-only mode, always show title as non-editable */}
+                  {isReadOnlyViewMode ? (
+                    <h2 className="document-title">
+                      {currentDocument.title}
+                    </h2>
+                  ) : isEditingTitle ? (
                     <div className="title-edit-container">
                       <input
                         type="text"
@@ -410,33 +469,37 @@ function App() {
                       {currentDocument.title}
                     </h2>
                   )}
-                  <div className="document-actions">
-                    {isEditingDocument ? (
+                  
+                  {/* Only show document actions in normal mode */}
+                  {!isReadOnlyViewMode && (
+                    <div className="document-actions">
+                      {isEditingDocument ? (
+                        <button 
+                          onClick={handleSaveDocument} 
+                          className="save-button"
+                        >
+                          Save
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={() => {
+                            console.log('Setting isEditingDocument to true');
+                            setIsEditingDocument(true);
+                          }} 
+                          className="edit-button"
+                          style={{ display: 'block', visibility: 'visible' }}
+                        >
+                          Edit
+                        </button>
+                      )}
                       <button 
-                        onClick={handleSaveDocument} 
-                        className="save-button"
+                        onClick={() => handleDeleteDocument(currentDocument.id)} 
+                        className="delete-button"
                       >
-                        Save
+                        Delete
                       </button>
-                    ) : (
-                      <button 
-                        onClick={() => {
-                          console.log('Setting isEditingDocument to true');
-                          setIsEditingDocument(true);
-                        }} 
-                        className="edit-button"
-                        style={{ display: 'block', visibility: 'visible' }}
-                      >
-                        Edit
-                      </button>
-                    )}
-                    <button 
-                      onClick={() => handleDeleteDocument(currentDocument.id)} 
-                      className="delete-button"
-                    >
-                      Delete
-                    </button>
-                  </div>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Always use the same content source to avoid editor resets */}
@@ -451,18 +514,21 @@ function App() {
                     updatedAt: new Date()
                   }}
                   onChange={(content) => {
-                    setEditedContent(content);
-                    // Set unsaved changes flag when content changes
-                    if (currentDocument && content !== currentDocument.content) {
-                      setHasUnsavedChanges(true);
-                    } else {
-                      setHasUnsavedChanges(false);
+                    // Only update content if not in read-only mode
+                    if (!isReadOnlyViewMode) {
+                      setEditedContent(content);
+                      // Set unsaved changes flag when content changes
+                      if (currentDocument && content !== currentDocument.content) {
+                        setHasUnsavedChanges(true);
+                      } else {
+                        setHasUnsavedChanges(false);
+                      }
                     }
                   }}
-                  onSave={isEditingDocument ? handleSaveDocument : undefined}
-                  onShare={handleShareDocument}
-                  onShareReadOnly={handleShareReadOnly}
-                  editable={isEditingDocument}
+                  onSave={!isReadOnlyViewMode && isEditingDocument ? handleSaveDocument : undefined}
+                  onShare={!isReadOnlyViewMode ? handleShareDocument : undefined}
+                  onShareReadOnly={!isReadOnlyViewMode ? handleShareReadOnly : undefined}
+                  editable={!isReadOnlyViewMode && isEditingDocument}
                   showToast={showToast}
                 />
               </div>
