@@ -76,7 +76,6 @@ function App() {
         
         // Split the decoded string to get library ID and document ID
         const [decodedLibId, decodedDocId] = decodedString.split(',');
-        console.log(decodedLibId, decodedDocId);
         
         if (decodedLibId && decodedDocId) {
           // Set the library ID first
@@ -268,6 +267,7 @@ function App() {
     const url = new URL(window.location.href);
     url.searchParams.set('lib', currentLibraryId);
     url.searchParams.set('doc', String(currentDocument.id));
+    url.searchParams.delete('show');
     
     // Copy the URL to clipboard
     navigator.clipboard.writeText(url.toString())
@@ -315,7 +315,7 @@ function App() {
       shareUrl = url.toString();
     } else {
       // For production, use the i.raoqu.cc/{value} format
-      shareUrl = `https://i.raoqu.cc/${reversedBase64}`;
+      shareUrl = `https://i.raoqu.cc/?param=${reversedBase64}`;
     }
     
     // Copy the URL to clipboard
