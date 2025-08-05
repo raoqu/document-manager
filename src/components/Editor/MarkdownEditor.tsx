@@ -349,7 +349,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onCha
           <div className="share-button-container" ref={shareDropdownRef}>
             <button 
               className="icon-button share-button" 
-              onClick={() => onShare && onShare()}
+              onClick={() => onShareReadOnly && onShareReadOnly()}
               title="Share document"
             >
               <i className="fas fa-share-alt"></i>

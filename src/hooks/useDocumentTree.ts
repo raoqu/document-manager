@@ -26,8 +26,9 @@ export const useDocumentTree = (libraryName: string | null) => {
         const documentTree = await api.getDocumentTree(libraryName);
         setDocuments(documentTree);
         
-        // Select first document if available and none is selected
-        if (documentTree.length > 0 && !selectedDocumentId) {
+        // Only select first document if available and none is selected AND we're not expecting a specific document to be loaded
+        // This prevents the first document from being loaded when we're expecting to load a specific document from URL params
+        if (documentTree.length > 0 && !selectedDocumentId && !window.location.search.includes('doc=') && !window.location.search.includes('param=')) {
           // Set the selected document ID
           const firstDocId = documentTree[0].id;
           setSelectedDocumentId(firstDocId);

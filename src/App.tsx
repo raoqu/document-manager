@@ -82,20 +82,23 @@ function App() {
           // Set the library ID first
           setCurrentLibraryId(decodedLibId);
           
-          // Set the document ID after a short delay to ensure the library has loaded
+          // Set the document ID immediately to ensure it's picked up by the useDocumentTree hook
           const docIdNum = parseInt(decodedDocId);
-          setTimeout(() => {
-            // Use the same approach as in the regular URL parameter handling
-            if (documents) {
-              const targetDoc = documents.find(doc => doc.id === docIdNum);
-              if (targetDoc) {
-                // Use the same approach as in handleSelectDocument
-                setSelectedDocumentId(docIdNum);
-                setEditedContent(targetDoc.content);
+          if (!isNaN(docIdNum)) {
+            setSelectedDocumentId(docIdNum);
+            
+            // Set up a watcher to update the edited content once the document is loaded
+            const checkForDocument = setInterval(() => {
+              if (documents && currentDocument && currentDocument.id === docIdNum) {
+                setEditedContent(currentDocument.content);
                 setIsEditingDocument(false); // Ensure we're in view mode
+                clearInterval(checkForDocument);
               }
-            }
-          }, 500);
+            }, 100);
+            
+            // Clear the interval after 5 seconds to prevent infinite checking
+            setTimeout(() => clearInterval(checkForDocument), 5000);
+          }
         }
       } catch (error) {
         console.error('Failed to decode param:', error);

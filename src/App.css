@@ -242,7 +242,8 @@
   transition: background-color 0.2s;
 }
 
-.document-editor-header h2.document-title:hover {
+/* Only show hover effect in normal mode, not in read-only mode */
+.app:not(.read-only-mode) .document-editor-header h2.document-title:hover {
   background-color: #f0f0f0;
 }
 
