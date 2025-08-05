@@ -50,6 +50,7 @@ function App() {
   // Parse URL parameters when the app loads
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const param = params.get('param');
     const libId = params.get('lib');
     const docId = params.get('doc');
     const showParam = params.get('show');
@@ -231,7 +232,43 @@ function App() {
         showToast('Failed to copy link. Please try again.', 'error');
       });
   };
-  
+
+  // Handle sharing document with read-only access
+  const handleShareReadOnly = () => {
+    if (!currentDocument || !currentLibraryId) return;
+    
+    // Create a URL with a single param containing encoded information
+    const url = new URL(window.location.href);
+    
+    // Create the base string with library and document IDs
+    const baseString = `${currentLibraryId},${currentDocument.id}`;
+    
+    // Convert to base64
+    const base64String = btoa(baseString);
+    
+    // Reverse the string index
+    const reversedBase64 = base64String.split('').reverse().join('');
+    
+    // Set as a single 'param' parameter
+    url.searchParams.set('param', reversedBase64);
+    
+    // Remove any existing lib/doc parameters to keep the URL clean
+    url.searchParams.delete('lib');
+    url.searchParams.delete('doc');
+    url.searchParams.delete('readonly');
+    url.searchParams.delete('show');
+    
+    // Copy the URL to clipboard
+    navigator.clipboard.writeText(url.toString())
+      .then(() => {
+        showToast('Read-only share link copied to clipboard!', 'success');
+      })
+      .catch(err => {
+        console.error('Failed to copy link:', err);
+        showToast('Failed to copy link. Please try again.', 'error');
+      });
+  };
+
   // Handle saving a new library from modal
   const handleSaveLibrary = async (name: string, path: string) => {
     try {
@@ -411,6 +448,7 @@ function App() {
                   }}
                   onSave={isEditingDocument ? handleSaveDocument : undefined}
                   onShare={handleShareDocument}
+                  onShareReadOnly={handleShareReadOnly}
                   editable={isEditingDocument}
                   showToast={showToast}
                 />

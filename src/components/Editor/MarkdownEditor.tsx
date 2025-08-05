@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -16,12 +16,32 @@ interface MarkdownEditorProps {
   markdownDocument: MarkdownDocument | null;
   onChange: (content: string) => void;
   onSave?: () => void; // Function to save the document
-  onShare?: () => void; // Function to share the document
+  onShare?: () => void; // Function to share the document with edit permissions
+  onShareReadOnly?: () => void; // Function to share the document with read-only permissions
   editable?: boolean; // Whether the editor should be in edit mode
   showToast?: (message: string, type: 'success' | 'error' | 'info') => void;
 }
 
-const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onChange, onSave, onShare, editable = true, showToast }) => {
+const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onChange, onSave, onShare, onShareReadOnly, editable = true, showToast }) => {
+  // State for share dropdown
+  const [shareDropdownOpen, setShareDropdownOpen] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const shareDropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownToggleRef = useRef<HTMLButtonElement>(null);
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (shareDropdownRef.current && !shareDropdownRef.current.contains(event.target as Node)) {
+        setShareDropdownOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
   // Create the editor with initial configuration
   const editor = useEditor({
     // We'll control editable state via useEffect
@@ -324,15 +344,67 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ markdownDocument, onCha
         
         <div className="toolbar-separator"></div>
         
-        {markdownDocument && onShare && (
-          <button 
-            className="icon-button share-button" 
-            onClick={onShare}
-            title="Share document"
-          >
-            <i className="fas fa-share-alt"></i>
-            <span className="tooltip">Share Link</span>
-          </button>
+        {markdownDocument && (onShare || onShareReadOnly) && (
+          <div className="share-button-container" ref={shareDropdownRef}>
+            <button 
+              className="icon-button share-button" 
+              onClick={() => onShare && onShare()}
+              title="Share document"
+            >
+              <i className="fas fa-share-alt"></i>
+              <span className="tooltip">Share Link</span>
+            </button>
+            <button 
+              className="icon-button dropdown-toggle" 
+              ref={dropdownToggleRef}
+              onClick={() => {
+                if (!shareDropdownOpen && dropdownToggleRef.current) {
+                  const rect = dropdownToggleRef.current.getBoundingClientRect();
+                  setDropdownPosition({
+                    top: rect.bottom + window.scrollY,
+                    left: rect.right - 160 + window.scrollX // 160px is the min-width of dropdown
+                  });
+                }
+                setShareDropdownOpen(!shareDropdownOpen);
+              }}
+              title="Share options"
+            >
+              <i className="fas fa-caret-down"></i>
+            </button>
+            
+            {shareDropdownOpen && (
+              <div 
+                className="dropdown-menu" 
+                style={{
+                  top: `${dropdownPosition.top}px`,
+                  left: `${dropdownPosition.left}px`
+                }}
+              >
+                {onShareReadOnly && (
+                  <button 
+                    className="dropdown-item" 
+                    onClick={() => {
+                      onShareReadOnly();
+                      setShareDropdownOpen(false);
+                    }}
+                  >
+                    <i className="fas fa-eye"></i> Read only
+                  </button>
+                )}
+                {onShare && (
+                  <button 
+                    className="dropdown-item" 
+                    onClick={() => {
+                      onShare();
+                      setShareDropdownOpen(false);
+                    }}
+                  >
+                    <i className="fas fa-edit"></i> Editable
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         )}
         
         <button 
