@@ -237,9 +237,6 @@ function App() {
   const handleShareReadOnly = () => {
     if (!currentDocument || !currentLibraryId) return;
     
-    // Create a URL with a single param containing encoded information
-    const url = new URL(window.location.href);
-    
     // Create the base string with library and document IDs
     const baseString = `${currentLibraryId},${currentDocument.id}`;
     
@@ -249,17 +246,33 @@ function App() {
     // Reverse the string index
     const reversedBase64 = base64String.split('').reverse().join('');
     
-    // Set as a single 'param' parameter
-    url.searchParams.set('param', reversedBase64);
+    // Check if current domain is localhost or an IP address
+    const currentHostname = window.location.hostname;
+    const isLocalhost = currentHostname === 'localhost' || 
+                       /^127\.\d+\.\d+\.\d+$/.test(currentHostname) || 
+                       currentHostname === '::1';
     
-    // Remove any existing lib/doc parameters to keep the URL clean
-    url.searchParams.delete('lib');
-    url.searchParams.delete('doc');
-    url.searchParams.delete('readonly');
-    url.searchParams.delete('show');
+    let shareUrl;
+    
+    if (isLocalhost) {
+      // For localhost debugging, use the param={value} format
+      const url = new URL(window.location.href);
+      url.searchParams.set('param', reversedBase64);
+      
+      // Remove any existing parameters to keep the URL clean
+      url.searchParams.delete('lib');
+      url.searchParams.delete('doc');
+      url.searchParams.delete('readonly');
+      url.searchParams.delete('show');
+      
+      shareUrl = url.toString();
+    } else {
+      // For production, use the i.raoqu.cc/{value} format
+      shareUrl = `https://i.raoqu.cc/${reversedBase64}`;
+    }
     
     // Copy the URL to clipboard
-    navigator.clipboard.writeText(url.toString())
+    navigator.clipboard.writeText(shareUrl)
       .then(() => {
         showToast('Read-only share link copied to clipboard!', 'success');
       })
