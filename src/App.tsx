@@ -12,6 +12,7 @@ import useToast from './hooks/useToast';
 function App() {
   const paramValue = new URLSearchParams(window.location.search).get('param');
   const isParamMode = paramValue !== null;
+  const defaultPageTitleRef = useRef(document.title);
 
   // State for document title editing
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -122,6 +123,15 @@ function App() {
     // Reset unsaved changes when document changes
     setHasUnsavedChanges(false);
   }, [currentDocument]);
+
+  useEffect(() => {
+    if (isParamMode) {
+      document.title = currentDocument?.title || defaultPageTitleRef.current;
+      return;
+    }
+
+    document.title = defaultPageTitleRef.current;
+  }, [isParamMode, currentDocument?.title]);
 
   // Handle document selection with unsaved changes check
   const handleSelectDocument = (documentId: number) => {
