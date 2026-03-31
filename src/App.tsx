@@ -9,6 +9,8 @@ import ToastContainer from './components/Toast/ToastContainer';
 import useToast from './hooks/useToast';
 
 function App() {
+  const isParamMode = new URLSearchParams(window.location.search).has('param');
+
   // State for document title editing
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
@@ -20,7 +22,7 @@ function App() {
     createLibrary,
     isLoading: isLibrariesLoading,
     error: librariesError,
-  } = useLibraries();
+  } = useLibraries({ skipInitialFetch: isParamMode });
 
   const {
     documents,
@@ -33,7 +35,7 @@ function App() {
     handleCreateDocument,
     renameDocument,
     updateDocumentContent,
-  } = useDocumentTree(currentLibraryId);
+  } = useDocumentTree(currentLibraryId, { skipInitialTreeFetch: isParamMode });
 
   const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
   const [isEditingDocument, setIsEditingDocument] = useState(false);

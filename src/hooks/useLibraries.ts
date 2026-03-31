@@ -3,7 +3,11 @@ import { generateId, saveToLocalStorage, loadFromLocalStorage, STORAGE_KEYS } fr
 import * as api from '../services/api';
 import type { Library } from '../services/api';
 
-export const useLibraries = () => {
+interface UseLibrariesOptions {
+  skipInitialFetch?: boolean;
+}
+
+export const useLibraries = ({ skipInitialFetch = false }: UseLibrariesOptions = {}) => {
   const [libraries, setLibraries] = useState<Library[]>([]);
   const [currentLibraryId, setCurrentLibraryId] = useState<string | null>(null);
 
@@ -12,6 +16,10 @@ export const useLibraries = () => {
 
   // Fetch libraries from API on initial render
   useEffect(() => {
+    if (skipInitialFetch) {
+      return;
+    }
+
     const fetchLibraries = async () => {
       setIsLoading(true);
       setError(null);
@@ -44,7 +52,7 @@ export const useLibraries = () => {
     };
     
     fetchLibraries();
-  }, []);
+  }, [skipInitialFetch]);
 
   // Save libraries to local storage whenever they change
   useEffect(() => {

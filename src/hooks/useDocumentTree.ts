@@ -2,7 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import * as api from '../services/api';
 import type { Document } from '../services/api';
 
-export const useDocumentTree = (libraryName: string | null) => {
+interface UseDocumentTreeOptions {
+  skipInitialTreeFetch?: boolean;
+}
+
+export const useDocumentTree = (
+  libraryName: string | null,
+  { skipInitialTreeFetch = false }: UseDocumentTreeOptions = {}
+) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -15,6 +22,11 @@ export const useDocumentTree = (libraryName: string | null) => {
       setDocuments([]);
       setSelectedDocumentId(null);
       setCurrentDocument(null);
+      return;
+    }
+
+    if (skipInitialTreeFetch) {
+      setDocuments([]);
       return;
     }
 
@@ -57,7 +69,7 @@ export const useDocumentTree = (libraryName: string | null) => {
     };
     
     fetchDocumentTree();
-  }, [libraryName]);
+  }, [libraryName, skipInitialTreeFetch]);
 
   // Update current document when selected document changes
   useEffect(() => {
@@ -98,6 +110,15 @@ export const useDocumentTree = (libraryName: string | null) => {
             content: fullDoc.content, // Use the content from the API
             title: fullDoc.title, // Use the title from the API
           });
+        } else if (skipInitialTreeFetch) {
+          const fullDoc = await api.getDocument(libraryName, selectedDocumentId);
+          setCurrentDocument({
+            id: selectedDocumentId,
+            title: fullDoc.title,
+            content: fullDoc.content,
+            parent_id: fullDoc.parent_id ?? null,
+            children: [],
+          });
         } else {
           setCurrentDocument(null);
         }
@@ -110,7 +131,7 @@ export const useDocumentTree = (libraryName: string | null) => {
     };
     
     fetchDocumentInfo();
-  }, [selectedDocumentId, documents, libraryName]);
+  }, [selectedDocumentId, documents, libraryName, skipInitialTreeFetch]);
 
   // Create a new document
   const createDocument = useCallback(async (
