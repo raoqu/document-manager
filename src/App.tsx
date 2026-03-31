@@ -3,13 +3,15 @@ import './App.css';
 import DocumentTree from './components/DocumentTree/DocumentTree';
 import LibraryModal from './components/Library/LibraryModal';
 import MarkdownEditor from './components/Editor/MarkdownEditor';
+import * as api from './services/api';
 import { useLibraries } from './hooks/useLibraries';
 import { useDocumentTree } from './hooks/useDocumentTree';
 import ToastContainer from './components/Toast/ToastContainer';
 import useToast from './hooks/useToast';
 
 function App() {
-  const isParamMode = new URLSearchParams(window.location.search).has('param');
+  const paramValue = new URLSearchParams(window.location.search).get('param');
+  const isParamMode = paramValue !== null;
 
   // State for document title editing
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -35,7 +37,7 @@ function App() {
     handleCreateDocument,
     renameDocument,
     updateDocumentContent,
-  } = useDocumentTree(currentLibraryId, { skipInitialTreeFetch: isParamMode });
+  } = useDocumentTree(currentLibraryId, { skipInitialTreeFetch: isParamMode, paramValue });
 
   const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
   const [isEditingDocument, setIsEditingDocument] = useState(false);
@@ -67,44 +69,6 @@ function App() {
     if (param) {
       // Set read-only view mode
       setIsReadOnlyViewMode(true);
-      
-      try {
-        // Reverse the base64 string
-        const reversedBase64 = param;
-        const base64String = reversedBase64.split('').reverse().join('');
-        
-        // Decode the base64 string
-        const decodedString = atob(base64String);
-        
-        // Split the decoded string to get library ID and document ID
-        const [decodedLibId, decodedDocId] = decodedString.split(',');
-        
-        if (decodedLibId && decodedDocId) {
-          // Set the library ID first
-          setCurrentLibraryId(decodedLibId);
-          
-          // Set the document ID immediately to ensure it's picked up by the useDocumentTree hook
-          const docIdNum = parseInt(decodedDocId);
-          if (!isNaN(docIdNum)) {
-            setSelectedDocumentId(docIdNum);
-            
-            // Set up a watcher to update the edited content once the document is loaded
-            const checkForDocument = setInterval(() => {
-              if (documents && currentDocument && currentDocument.id === docIdNum) {
-                setEditedContent(currentDocument.content);
-                setIsEditingDocument(false); // Ensure we're in view mode
-                clearInterval(checkForDocument);
-              }
-            }, 100);
-            
-            // Clear the interval after 5 seconds to prevent infinite checking
-            setTimeout(() => clearInterval(checkForDocument), 5000);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to decode param:', error);
-        showToast('Invalid share link', 'error');
-      }
     }
     // If we have both library and document IDs in the URL
     else if (libId && docId) {
@@ -283,52 +247,37 @@ function App() {
   };
 
   // Handle sharing document with read-only access
-  const handleShareReadOnly = () => {
+  const handleShareReadOnly = async () => {
     if (!currentDocument || !currentLibraryId) return;
-    
-    // Create the base string with library and document IDs
-    const baseString = `${currentLibraryId},${currentDocument.id}`;
-    
-    // Convert to base64
-    const base64String = btoa(baseString);
-    
-    // Reverse the string index
-    const reversedBase64 = base64String.split('').reverse().join('');
-    
-    // Check if current domain is localhost or an IP address
-    const currentHostname = window.location.hostname;
-    const isLocalhost = currentHostname === 'localhost' || 
-                       /^127\.\d+\.\d+\.\d+$/.test(currentHostname) || 
-                       currentHostname === '::1';
-    
-    let shareUrl;
-    
-    if (isLocalhost) {
-      // For localhost debugging, use the param={value} format
-      const url = new URL(window.location.href);
-      url.searchParams.set('param', reversedBase64);
-      
-      // Remove any existing parameters to keep the URL clean
-      url.searchParams.delete('lib');
-      url.searchParams.delete('doc');
-      url.searchParams.delete('readonly');
-      url.searchParams.delete('show');
-      
-      shareUrl = url.toString();
-    } else {
-      // For production, use the i.raoqu.cc/{value} format
-      shareUrl = `https://i.raoqu.cc/?param=${reversedBase64}`;
+
+    try {
+      const shareParam = await api.getShareParam(currentLibraryId, currentDocument.id);
+
+      const currentHostname = window.location.hostname;
+      const isLocalhost = currentHostname === 'localhost' || 
+                         /^127\.\d+\.\d+\.\d+$/.test(currentHostname) || 
+                         currentHostname === '::1';
+
+      let shareUrl;
+
+      if (isLocalhost) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('param', shareParam);
+        url.searchParams.delete('lib');
+        url.searchParams.delete('doc');
+        url.searchParams.delete('readonly');
+        url.searchParams.delete('show');
+        shareUrl = url.toString();
+      } else {
+        shareUrl = `https://i.raoqu.cc/?param=${encodeURIComponent(shareParam)}`;
+      }
+
+      await navigator.clipboard.writeText(shareUrl);
+      showToast('Read-only share link copied to clipboard!', 'success');
+    } catch (err) {
+      console.error('Failed to generate read-only share link:', err);
+      showToast('Failed to create read-only share link. Please try again.', 'error');
     }
-    
-    // Copy the URL to clipboard
-    navigator.clipboard.writeText(shareUrl)
-      .then(() => {
-        showToast('Read-only share link copied to clipboard!', 'success');
-      })
-      .catch(err => {
-        console.error('Failed to copy link:', err);
-        showToast('Failed to copy link. Please try again.', 'error');
-      });
   };
 
   // Handle saving a new library from modal

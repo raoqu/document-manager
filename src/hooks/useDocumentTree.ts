@@ -4,11 +4,12 @@ import type { Document } from '../services/api';
 
 interface UseDocumentTreeOptions {
   skipInitialTreeFetch?: boolean;
+  paramValue?: string | null;
 }
 
 export const useDocumentTree = (
   libraryName: string | null,
-  { skipInitialTreeFetch = false }: UseDocumentTreeOptions = {}
+  { skipInitialTreeFetch = false, paramValue = null }: UseDocumentTreeOptions = {}
 ) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -18,15 +19,15 @@ export const useDocumentTree = (
 
   // Fetch document tree when library changes
   useEffect(() => {
+    if (skipInitialTreeFetch) {
+      setDocuments((prevDocuments) => (prevDocuments.length === 0 ? prevDocuments : []));
+      return;
+    }
+
     if (!libraryName) {
       setDocuments([]);
       setSelectedDocumentId(null);
       setCurrentDocument(null);
-      return;
-    }
-
-    if (skipInitialTreeFetch) {
-      setDocuments([]);
       return;
     }
 
@@ -44,20 +45,6 @@ export const useDocumentTree = (
           // Set the selected document ID
           const firstDocId = documentTree[0].id;
           setSelectedDocumentId(firstDocId);
-          
-          // Also fetch the full document info for the first document
-          try {
-            const fullDoc = await api.getDocument(libraryName, firstDocId);
-            
-            // Merge the document info with the tree structure info
-            setCurrentDocument({
-              ...documentTree[0],
-              content: fullDoc.content,
-              title: fullDoc.title,
-            });
-          } catch (fetchErr) {
-            console.error('Failed to fetch first document info:', fetchErr);
-          }
         }
       } catch (err) {
         console.error('Failed to fetch document tree:', err);
@@ -71,8 +58,43 @@ export const useDocumentTree = (
     fetchDocumentTree();
   }, [libraryName, skipInitialTreeFetch]);
 
+  useEffect(() => {
+    if (!skipInitialTreeFetch) {
+      return;
+    }
+
+    if (!paramValue) {
+      setCurrentDocument(null);
+      setSelectedDocumentId(null);
+      return;
+    }
+
+    const fetchContentByParam = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const document = await api.getContentByParam(paramValue);
+        setCurrentDocument(document);
+        setSelectedDocumentId(document.id > 0 ? document.id : null);
+      } catch (err) {
+        console.error('Failed to fetch content by param:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch content by param');
+        setCurrentDocument(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchContentByParam();
+  }, [paramValue, skipInitialTreeFetch]);
+
   // Update current document when selected document changes
   useEffect(() => {
+    if (skipInitialTreeFetch) {
+      return;
+    }
+
     if (!selectedDocumentId || !libraryName) {
       setCurrentDocument(null);
       return;
@@ -109,15 +131,6 @@ export const useDocumentTree = (
             ...basicDoc,
             content: fullDoc.content, // Use the content from the API
             title: fullDoc.title, // Use the title from the API
-          });
-        } else if (skipInitialTreeFetch) {
-          const fullDoc = await api.getDocument(libraryName, selectedDocumentId);
-          setCurrentDocument({
-            id: selectedDocumentId,
-            title: fullDoc.title,
-            content: fullDoc.content,
-            parent_id: fullDoc.parent_id ?? null,
-            children: [],
           });
         } else {
           setCurrentDocument(null);

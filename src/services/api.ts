@@ -272,6 +272,72 @@ export const getDocument = async (libraryName: string, id: number) => {
   }
 };
 
+export const getContentByParam = async (param: string): Promise<Document> => {
+  try {
+    const response = await fetch(`/api/content?param=${encodeURIComponent(param)}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      try {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to fetch content by param: ${response.status} ${response.statusText}`);
+      } catch (jsonError) {
+        throw new Error(`Failed to fetch content by param: ${response.status} ${response.statusText}`);
+      }
+    }
+
+    const data = await response.json();
+    const documentData = data.document || data.data || data;
+
+    return {
+      id: Number(documentData.id ?? documentData.document_id ?? 0),
+      title: String(documentData.title ?? 'Untitled'),
+      content: String(documentData.content ?? ''),
+      parent_id: documentData.parent_id ?? null,
+      children: [],
+    };
+  } catch (error) {
+    console.error('Error fetching content by param:', error);
+    throw error;
+  }
+};
+
+export const getShareParam = async (libraryName: string, id: number): Promise<string> => {
+  try {
+    const response = await fetch(`/api/share?library=${encodeURIComponent(libraryName)}&id=${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      try {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to generate share param: ${response.status} ${response.statusText}`);
+      } catch (jsonError) {
+        throw new Error(`Failed to generate share param: ${response.status} ${response.statusText}`);
+      }
+    }
+
+    const data = await response.json();
+    const param = data.param || data.share_param || data.token;
+
+    if (!param || typeof param !== 'string') {
+      throw new Error('Invalid share response: missing param');
+    }
+
+    return param;
+  } catch (error) {
+    console.error('Error generating share param:', error);
+    throw error;
+  }
+};
+
 export const updateDocument = async (
   libraryName: string,
   id: number,
